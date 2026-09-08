@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>AI Study Assistant — 4 Week Learning Plan</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #0f0f13;
+      color: #e2e2e2;
+      line-height: 1.6;
+    }
+
+    header {
+      background: linear-gradient(135deg, #1a1a2e, #16213e);
+      border-bottom: 1px solid #2a2a3e;
+      padding: 48px 40px 40px;
+    }
+
+    header h1 {
+      font-size: 2.2rem;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: -0.5px;
+    }
+
+    header p {
+      margin-top: 8px;
+      color: #8888aa;
+      font-size: 1rem;
+    }
+
+    .tag {
+      display: inline-block;
+      background: #6c63ff22;
+      color: #a89cff;
+      border: 1px solid #6c63ff44;
+      border-radius: 20px;
+      padding: 3px 12px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 48px 40px;
+    }
+
+    /* Goal Banner */
+    .goal-banner {
+      background: linear-gradient(135deg, #1e1b4b, #1a1a2e);
+      border: 1px solid #6c63ff44;
+      border-radius: 12px;
+      padding: 28px 32px;
+      margin-bottom: 48px;
+    }
+
+    .goal-banner h2 {
+      font-size: 1.1rem;
+      color: #a89cff;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      font-size: 0.8rem;
+      margin-bottom: 10px;
+    }
+
+    .goal-banner p {
+      font-size: 1.05rem;
+      color: #e2e2e2;
+    }
+
+    /* Concepts Grid */
+    .section-title {
+      font-size: 1.3rem;
+      font-weight: 600;
+      color: #fff;
+      margin-bottom: 6px;
+    }
+
+    .section-sub {
+      color: #8888aa;
+      font-size: 0.9rem;
+      margin-bottom: 24px;
+    }
+
+    .concepts-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 16px;
+      margin-bottom: 56px;
+    }
+
+    .concept-card {
+      background: #16161e;
+      border: 1px solid #2a2a3e;
+      border-radius: 10px;
+      padding: 20px;
+    }
+
+    .concept-card h3 {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: #fff;
+      margin-bottom: 6px;
+    }
+
+    .concept-card .definition {
+      font-size: 0.85rem;
+      color: #9999bb;
+      margin-bottom: 12px;
+    }
+
+    .interview-tip {
+      background: #0d1f12;
+      border-left: 3px solid #4ade80;
+      border-radius: 0 6px 6px 0;
+      padding: 10px 12px;
+      font-size: 0.8rem;
+      color: #86efac;
+    }
+
+    .interview-tip strong {
+      display: block;
+      color: #4ade80;
+      margin-bottom: 3px;
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* Week blocks */
+    .weeks {
+      display: flex;
+      flex-direction: column;
+      gap: 32px;
+      margin-bottom: 56px;
+    }
+
+    .week-block {
+      border: 1px solid #2a2a3e;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .week-header {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 20px 24px;
+      border-bottom: 1px solid #2a2a3e;
+    }
+
+    .week-number {
+      background: #6c63ff;
+      color: #fff;
+      font-weight: 700;
+      font-size: 0.75rem;
+      padding: 4px 10px;
+      border-radius: 20px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      white-space: nowrap;
+    }
+
+    .week-number.w2 { background: #0ea5e9; }
+    .week-number.w3 { background: #f59e0b; }
+    .week-number.w4 { background: #ec4899; }
+
+    .week-header h3 {
+      font-size: 1rem;
+      font-weight: 600;
+      color: #fff;
+    }
+
+    .week-header p {
+      font-size: 0.82rem;
+      color: #8888aa;
+    }
+
+    .days-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .days-table tr {
+      border-bottom: 1px solid #1e1e2a;
+    }
+
+    .days-table tr:last-child {
+      border-bottom: none;
+    }
+
+    .days-table td {
+      padding: 14px 24px;
+      font-size: 0.875rem;
+      vertical-align: top;
+    }
+
+    .day-num {
+      color: #555577;
+      font-weight: 600;
+      font-size: 0.75rem;
+      white-space: nowrap;
+      width: 60px;
+      padding-top: 16px;
+    }
+
+    .day-title {
+      color: #e2e2e2;
+      font-weight: 500;
+      width: 220px;
+    }
+
+    .day-learns {
+      color: #8888aa;
+    }
+
+    .day-interview {
+      color: #86efac;
+      font-size: 0.8rem;
+      background: #0d1f1244;
+      border-radius: 6px;
+      padding: 6px 10px;
+      white-space: nowrap;
+    }
+
+    /* YouTube section */
+    .yt-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 16px;
+      margin-bottom: 56px;
+    }
+
+    .yt-card {
+      background: #16161e;
+      border: 1px solid #2a2a3e;
+      border-radius: 10px;
+      padding: 20px;
+    }
+
+    .yt-card .phase {
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: #ff4444;
+      margin-bottom: 8px;
+    }
+
+    .yt-card h3 {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: #fff;
+      margin-bottom: 6px;
+    }
+
+    .yt-card .channel {
+      font-size: 0.8rem;
+      color: #8888aa;
+      margin-bottom: 10px;
+    }
+
+    .search-term {
+      background: #1e1e2a;
+      border: 1px solid #2a2a3e;
+      border-radius: 6px;
+      padding: 8px 12px;
+      font-size: 0.78rem;
+      color: #a89cff;
+      font-family: 'SF Mono', 'Fira Code', monospace;
+    }
+
+    .search-term::before {
+      content: "Search → ";
+      color: #555577;
+    }
+
+    /* Interview Questions */
+    .iq-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 56px;
+    }
+
+    .iq-item {
+      background: #16161e;
+      border: 1px solid #2a2a3e;
+      border-radius: 10px;
+      padding: 20px 24px;
+    }
+
+    .iq-item .q {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: #fff;
+      margin-bottom: 8px;
+    }
+
+    .iq-item .a {
+      font-size: 0.85rem;
+      color: #9999bb;
+      line-height: 1.65;
+    }
+
+    .iq-item .a strong {
+      color: #e2e2e2;
+    }
+
+    /* Stack */
+    .stack-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 12px;
+      margin-bottom: 56px;
+    }
+
+    .stack-item {
+      background: #16161e;
+      border: 1px solid #2a2a3e;
+      border-radius: 8px;
+      padding: 16px;
+      text-align: center;
+    }
+
+    .stack-item .name {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: #fff;
+      margin-bottom: 4px;
+    }
+
+    .stack-item .purpose {
+      font-size: 0.78rem;
+      color: #8888aa;
+    }
+
+    footer {
+      border-top: 1px solid #2a2a3e;
+      padding: 32px 40px;
+      text-align: center;
+      color: #555577;
+      font-size: 0.82rem;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="tag">4-Week Plan</div>
+  <h1>AI Study Assistant</h1>
+  <p>Build a RAG-powered app that reads lecture PDFs and lets you chat with your notes — while learning AI fundamentals.</p>
+</header>
+
+<div class="container">
+
+  <!-- Goal -->
+  <div class="goal-banner">
+    <h2>End Goal</h2>
+    <p>Upload any lecture PDF → Claude summarizes it, generates Q&amp;A, flashcards, and key concepts → Chat with all your PDFs at once using semantic search → Full Next.js UI to prep for any exam.</p>
+  </div>
+
+  <!-- Core AI Concepts -->
+  <div class="section-title">Core AI Concepts to Master</div>
+  <div class="section-sub">Understand these deeply — they come up in every AI interview</div>
+
+  <div class="concepts-grid">
+
+    <div class="concept-card">
+      <h3>LLM (Large Language Model)</h3>
+      <p class="definition">A neural network trained on massive text data to predict the next token. Takes text in, outputs text.</p>
+      <div class="interview-tip">
+        <strong>Interview Answer</strong>
+        "An LLM is a transformer-based model trained to predict tokens. It doesn't 'think' — it finds the statistically likely next word given context. Claude, GPT, and Gemini are all LLMs."
+      </div>
+    </div>
+
+    <div class="concept-card">
+      <h3>Tokens</h3>
+      <p class="definition">Text broken into chunks. "learning" ≈ 1 token. Matters for cost, speed, and context window limits.</p>
+      <div class="interview-tip">
+        <strong>Interview Answer</strong>
+        "Tokens are sub-word units. 1 token ≈ 0.75 words. They determine API cost, max input size, and latency. Claude's context window is measured in tokens."
+      </div>
+    </div>
+
+    <div class="concept-card">
+      <h3>Prompt Engineering</h3>
+      <p class="definition">Crafting system + user messages to get reliable, high-quality outputs from an LLM.</p>
+      <div class="interview-tip">
+        <strong>Interview Answer</strong>
+        "Prompt engineering involves structuring system prompts to set behavior, using few-shot examples to guide format, and chaining prompts to break complex tasks into steps."
+      </div>
+    </div>
+
+    <div class="concept-card">
+      <h3>Temperature</h3>
+      <p class="definition">Controls output randomness. 0 = deterministic. 1 = creative. For factual Q&amp;A, use 0.</p>
+      <div class="interview-tip">
+        <strong>Interview Answer</strong>
+        "Temperature scales the logits before sampling. Low temperature makes the model pick the highest-probability token consistently. High temperature flattens the distribution, adding variety."
+      </div>
+    </div>
+
+    <div class="concept-card">
+      <h3>Embeddings</h3>
+      <p class="definition">Converting text into a list of numbers (vector) that captures meaning. Similar text → similar vectors.</p>
+      <div class="interview-tip">
+        <strong>Interview Answer</strong>
+        "Embeddings are dense vector representations where semantic similarity maps to geometric proximity. They enable search that understands meaning, not just keywords."
+      </div>
+    </div>
+
+    <div class="concept-card">
+      <h3>Vector Database</h3>
+      <p class="definition">A database optimized for storing and searching embeddings. Find similar content by meaning, not exact match.</p>
+      <div class="interview-tip">
+        <strong>Interview Answer</strong>
+        "Vector DBs use approximate nearest-neighbor algorithms (like HNSW) to find semantically similar documents at scale. ChromaDB, Pinecone, and Weaviate are common choices."
+      </div>
+    </div>
+
+    <div class="concept-card">
+      <h3>RAG (Retrieval-Augmented Generation)</h3>
+      <p class="definition">Fetch relevant documents → inject into the prompt → LLM answers based on real data, not hallucinations.</p>
+      <div class="interview-tip">
+        <strong>Interview Answer</strong>
+        "RAG addresses LLM hallucination and knowledge cutoff by retrieving relevant chunks from a vector store and grounding the model's answer in real source material."
+      </div>
+    </div>
+
+    <div class="concept-card">
+      <h3>Tool Use / Function Calling</h3>
+      <p class="definition">Define functions Claude can call. The model decides when and how to invoke them during a response.</p>
+      <div class="interview-tip">
+        <strong>Interview Answer</strong>
+        "Tool use lets the model emit structured JSON describing a function call. The app executes the function and feeds results back. This is how agents take actions beyond text generation."
+      </div>
+    </div>
+
+    <div class="concept-card">
+      <h3>Context Window</h3>
+      <p class="definition">The maximum tokens Claude can read at once (input + output). Large PDFs must be chunked.</p>
+      <div class="interview-tip">
+        <strong>Interview Answer</strong>
+        "Context window limits how much text the model can attend to. Chunking splits documents into overlapping segments so each fits within this limit while preserving continuity."
+      </div>
+    </div>
+
+    <div class="concept-card">
+      <h3>Chunking</h3>
+      <p class="definition">Splitting large documents into smaller overlapping pieces so each chunk fits in the context window.</p>
+      <div class="interview-tip">
+        <strong>Interview Answer</strong>
+        "Chunk size and overlap are critical RAG hyperparameters. Too small loses context; too large reduces retrieval precision. Overlap prevents answer splitting at chunk boundaries."
+      </div>
+    </div>
+
+    <div class="concept-card">
+      <h3>Cosine Similarity</h3>
+      <p class="definition">Measures the angle between two embedding vectors. Score of 1 = identical meaning, 0 = unrelated.</p>
+      <div class="interview-tip">
+        <strong>Interview Answer</strong>
+        "Cosine similarity ignores vector magnitude and measures directional alignment, making it robust for comparing text embeddings regardless of document length."
+      </div>
+    </div>
+
+    <div class="concept-card">
+      <h3>Agent Loop</h3>
+      <p class="definition">LLM decides → calls a tool → gets result → decides again → repeat until task is done.</p>
+      <div class="interview-tip">
+        <strong>Interview Answer</strong>
+        "An agent loop is a ReAct-style cycle: Reason about the goal, Act by calling a tool, Observe the result, repeat. The model orchestrates multi-step tasks autonomously."
+      </div>
+    </div>
+
+  </div>
+
+  <!-- 4 Week Plan -->
+  <div class="section-title">4-Week Build Plan</div>
+  <div class="section-sub">One script per day — each one is runnable, tweakable, and teaches one concept</div>
+
+  <div class="weeks">
+
+    <!-- Week 1 -->
+    <div class="week-block">
+      <div class="week-header">
+        <span class="week-number">Week 1</span>
+        <div>
+          <h3>Prompting Fundamentals</h3>
+          <p>Read PDFs, summarize them, generate Q&amp;A and flashcards using prompt engineering</p>
+        </div>
+      </div>
+      <table class="days-table">
+        <tr>
+          <td class="day-num">Day 1</td>
+          <td class="day-title">PDF Reader + Basic Summary</td>
+          <td class="day-learns">Read a PDF with PyMuPDF, send content to Claude, print a summary. Learn: API call anatomy, system vs user prompt.</td>
+          <td class="day-interview">API call structure, system prompt</td>
+        </tr>
+        <tr>
+          <td class="day-num">Day 2</td>
+          <td class="day-title">Q&amp;A Generator</td>
+          <td class="day-learns">From lecture text, generate 10 exam-style Q&amp;A pairs. Learn: few-shot prompting, output formatting.</td>
+          <td class="day-interview">Few-shot prompting</td>
+        </tr>
+        <tr>
+          <td class="day-num">Day 3</td>
+          <td class="day-title">Flashcard Generator</td>
+          <td class="day-learns">Extract key terms and generate Anki-style flashcards. Learn: prompt chaining, instruction clarity.</td>
+          <td class="day-interview">Prompt chaining</td>
+        </tr>
+        <tr>
+          <td class="day-num">Day 4</td>
+          <td class="day-title">Concept Extractor</td>
+          <td class="day-learns">Identify and define the 5 most important concepts from any lecture. Learn: temperature control, specificity in prompts.</td>
+          <td class="day-interview">Temperature, prompt specificity</td>
+        </tr>
+        <tr>
+          <td class="day-num">Day 5</td>
+          <td class="day-title">Full Study Guide Builder</td>
+          <td class="day-learns">Chain all previous scripts — one PDF in, full study guide out. Learn: multi-step pipelines, file I/O.</td>
+          <td class="day-interview">Multi-step LLM pipelines</td>
+        </tr>
+      </table>
+    </div>
+
+    <!-- Week 2 -->
+    <div class="week-block">
+      <div class="week-header">
+        <span class="week-number w2">Week 2</span>
+        <div>
+          <h3>Tool Use &amp; Structured Outputs</h3>
+          <p>Get JSON outputs, define tools Claude can call, build a basic agent</p>
+        </div>
+      </div>
+      <table class="days-table">
+        <tr>
+          <td class="day-num">Day 6</td>
+          <td class="day-title">Structured JSON Output</td>
+          <td class="day-learns">Generate flashcards as JSON instead of plain text. Learn: output schemas, parsing structured responses.</td>
+          <td class="day-interview">Structured outputs, JSON mode</td>
+        </tr>
+        <tr>
+          <td class="day-num">Day 7</td>
+          <td class="day-title">First Tool Definition</td>
+          <td class="day-learns">Define a "save_flashcard" tool Claude can call. Learn: tool schema, when the model decides to call a tool.</td>
+          <td class="day-interview">Function calling, tool schema</td>
+        </tr>
+        <tr>
+          <td class="day-num">Day 8</td>
+          <td class="day-title">Multi-Tool Agent</td>
+          <td class="day-learns">Claude picks between summarize, quiz, and flag-hard-topics tools. Learn: tool selection, multi-tool responses.</td>
+          <td class="day-interview">Tool selection, orchestration</td>
+        </tr>
+        <tr>
+          <td class="day-num">Day 9</td>
+          <td class="day-title">Streaming Responses</td>
+          <td class="day-learns">Print Claude's response token by token as it generates. Learn: streaming API, UX implications.</td>
+          <td class="day-interview">Streaming, latency optimization</td>
+        </tr>
+        <tr>
+          <td class="day-num">Day 10</td>
+          <td class="day-title">Agent Loop</td>
+          <td class="day-learns">Agent decides what to do with a PDF — loop until task is complete. Learn: ReAct pattern, agent design.</td>
+          <td class="day-interview">ReAct pattern, autonomous agents</td>
+        </tr>
+      </table>
+    </div>
+
+    <!-- Week 3 -->
+    <div class="week-block">
+      <div class="week-header">
+        <span class="week-number w3">Week 3</span>
+        <div>
+          <h3>Embeddings &amp; Semantic Search</h3>
+          <p>Search across all your PDFs by meaning, not keywords</p>
+        </div>
+      </div>
+      <table class="days-table">
+        <tr>
+          <td class="day-num">Day 11</td>
+          <td class="day-title">Your First Embedding</td>
+          <td class="day-learns">Convert a sentence to a vector, print its shape. Learn: what embeddings are, embedding models.</td>
+          <td class="day-interview">Embeddings, vector space</td>
+        </tr>
+        <tr>
+          <td class="day-num">Day 12</td>
+          <td class="day-title">Cosine Similarity</td>
+          <td class="day-learns">Compare two chunks of text, score their similarity. Learn: cosine similarity, why it works for text.</td>
+          <td class="day-interview">Similarity metrics, ANN search</td>
+        </tr>
+        <tr>
+          <td class="day-num">Day 13</td>
+          <td class="day-title">ChromaDB Vector Store</td>
+          <td class="day-learns">Store lecture chunks in ChromaDB, retrieve by query. Learn: vector databases, persistence.</td>
+          <td class="day-interview">Vector DBs, HNSW indexing</td>
+        </tr>
+        <tr>
+          <td class="day-num">Day 14</td>
+          <td class="day-title">Semantic Search</td>
+          <td class="day-learns">Ask a question, find the most relevant lecture sections. Learn: retrieval pipeline, chunking strategy.</td>
+          <td class="day-interview">Retrieval pipeline, chunking</td>
+        </tr>
+        <tr>
+          <td class="day-num">Day 15</td>
+          <td class="day-title">Multi-PDF Search</td>
+          <td class="day-learns">Search across 10 lectures at once. Learn: metadata filtering, source attribution.</td>
+          <td class="day-interview">Multi-doc retrieval, metadata</td>
+        </tr>
+      </table>
+    </div>
+
+    <!-- Week 4 -->
+    <div class="week-block">
+      <div class="week-header">
+        <span class="week-number w4">Week 4</span>
+        <div>
+          <h3>RAG Pipeline + Chat UI</h3>
+          <p>Full retrieval-augmented generation pipeline wired to a Next.js chat interface</p>
+        </div>
+      </div>
+      <table class="days-table">
+        <tr>
+          <td class="day-num">Day 16</td>
+          <td class="day-title">Basic RAG Pipeline</td>
+          <td class="day-learns">Retrieve → inject into prompt → answer. Learn: RAG architecture, grounding responses.</td>
+          <td class="day-interview">RAG end-to-end architecture</td>
+        </tr>
+        <tr>
+          <td class="day-num">Day 17</td>
+          <td class="day-title">Advanced RAG</td>
+          <td class="day-learns">Better chunking, re-ranking results, source citations. Learn: retrieval quality, hallucination prevention.</td>
+          <td class="day-interview">Re-ranking, hallucination mitigation</td>
+        </tr>
+        <tr>
+          <td class="day-num">Day 18</td>
+          <td class="day-title">Next.js Backend Setup</td>
+          <td class="day-learns">Wire Python RAG pipeline to a Next.js API route. Learn: AI backend integration patterns.</td>
+          <td class="day-interview">AI backend architecture</td>
+        </tr>
+        <tr>
+          <td class="day-num">Day 19</td>
+          <td class="day-title">Chat UI with PDF Upload</td>
+          <td class="day-learns">Drag-and-drop PDF → chat with it in the browser. Learn: streaming UI, file handling.</td>
+          <td class="day-interview">Streaming UI, file ingestion</td>
+        </tr>
+        <tr>
+          <td class="day-num">Day 20</td>
+          <td class="day-title">Final Polish + Deploy</td>
+          <td class="day-learns">Quiz mode, history, multi-PDF switcher. Deploy to Vercel.</td>
+          <td class="day-interview">Production AI app deployment</td>
+        </tr>
+      </table>
+    </div>
+
+  </div>
+
+  <!-- YouTube / Learning Resources -->
+  <div class="section-title">What to Watch on YouTube</div>
+  <div class="section-sub">Search these exact terms — no guessed links, just verified search queries</div>
+
+  <div class="yt-grid">
+
+    <div class="yt-card">
+      <div class="phase">Before Day 1</div>
+      <h3>Python in 100 Seconds</h3>
+      <p class="channel">Fireship</p>
+      <div class="search-term">Python in 100 seconds Fireship</div>
+    </div>
+
+    <div class="yt-card">
+      <div class="phase">Before Day 1</div>
+      <h3>How LLMs Work Visually</h3>
+      <p class="channel">3Blue1Brown</p>
+      <div class="search-term">3Blue1Brown but what is a GPT</div>
+    </div>
+
+    <div class="yt-card">
+      <div class="phase">Week 1</div>
+      <h3>Prompt Engineering Guide</h3>
+      <p class="channel">Anthropic Docs / YouTube</p>
+      <div class="search-term">Anthropic prompt engineering tutorial 2024</div>
+    </div>
+
+    <div class="yt-card">
+      <div class="phase">Week 1</div>
+      <h3>Claude API Python Quickstart</h3>
+      <p class="channel">Various creators</p>
+      <div class="search-term">Anthropic Claude API Python tutorial beginners</div>
+    </div>
+
+    <div class="yt-card">
+      <div class="phase">Week 2</div>
+      <h3>Function Calling Explained</h3>
+      <p class="channel">AI Jason / Various</p>
+      <div class="search-term">LLM function calling tool use explained 2024</div>
+    </div>
+
+    <div class="yt-card">
+      <div class="phase">Week 2</div>
+      <h3>Building AI Agents</h3>
+      <p class="channel">Andrej Karpathy</p>
+      <div class="search-term">Andrej Karpathy intro to large language models</div>
+    </div>
+
+    <div class="yt-card">
+      <div class="phase">Week 3</div>
+      <h3>Word Embeddings Explained</h3>
+      <p class="channel">3Blue1Brown</p>
+      <div class="search-term">3Blue1Brown word embeddings neural networks</div>
+    </div>
+
+    <div class="yt-card">
+      <div class="phase">Week 3</div>
+      <h3>Vector Databases in 10 min</h3>
+      <p class="channel">Fireship</p>
+      <div class="search-term">vector database explained Fireship</div>
+    </div>
+
+    <div class="yt-card">
+      <div class="phase">Week 4</div>
+      <h3>RAG from Scratch</h3>
+      <p class="channel">LangChain YouTube</p>
+      <div class="search-term">RAG from scratch LangChain tutorial</div>
+    </div>
+
+    <div class="yt-card">
+      <div class="phase">Week 4</div>
+      <h3>Build a Full RAG App</h3>
+      <p class="channel">Traversy Media / FreeCodeCamp</p>
+      <div class="search-term">build RAG app Python Next.js full tutorial 2024</div>
+    </div>
+
+  </div>
+
+  <!-- Interview Q&A -->
+  <div class="section-title">Top Interview Questions You'll Be Able to Answer</div>
+  <div class="section-sub">Memorize the structure, not the words — then explain it in your own voice</div>
+
+  <div class="iq-list">
+
+    <div class="iq-item">
+      <div class="q">Q: What is RAG and why do we need it?</div>
+      <div class="a">
+        <strong>RAG (Retrieval-Augmented Generation)</strong> solves two problems with LLMs: hallucination and knowledge cutoff. Instead of relying purely on what the model was trained on, you retrieve relevant documents from your own data store and inject them into the prompt as context. The model then generates an answer grounded in real source material, which you can cite and verify.
+      </div>
+    </div>
+
+    <div class="iq-item">
+      <div class="q">Q: How do embeddings work?</div>
+      <div class="a">
+        An embedding model converts text into a dense vector — a list of ~1500 numbers. The model is trained so that semantically similar text produces similar vectors. You measure similarity using cosine similarity: the angle between two vectors. If the angle is small (cosine ≈ 1), the texts are semantically close. This lets you find related content without keyword matching.
+      </div>
+    </div>
+
+    <div class="iq-item">
+      <div class="q">Q: What's the difference between a system prompt and a user message?</div>
+      <div class="a">
+        The <strong>system prompt</strong> sets the model's persona, constraints, and behavior for the entire conversation — it's like a contract. The <strong>user message</strong> is the actual input for that turn. System prompts are processed first and carry more weight in steering the model's style and restrictions.
+      </div>
+    </div>
+
+    <div class="iq-item">
+      <div class="q">Q: What is chunking and why does it matter in RAG?</div>
+      <div class="a">
+        Chunking splits large documents into smaller overlapping segments that fit within the context window. Chunk size is a critical hyperparameter: too small loses context, too large reduces retrieval precision. Overlap (e.g., 10–20% shared tokens between adjacent chunks) prevents splitting an answer across two chunks that are never retrieved together.
+      </div>
+    </div>
+
+    <div class="iq-item">
+      <div class="q">Q: How would you prevent hallucinations in an AI app?</div>
+      <div class="a">
+        Three layers: (1) <strong>RAG</strong> — ground answers in retrieved source documents; (2) <strong>Constrained prompts</strong> — instruct the model to say "I don't know" if the answer isn't in the context; (3) <strong>Source attribution</strong> — return the source chunk alongside the answer so users can verify. For high-stakes cases, add a second LLM call to fact-check the first.
+      </div>
+    </div>
+
+    <div class="iq-item">
+      <div class="q">Q: What is an agent and how does the loop work?</div>
+      <div class="a">
+        An agent is an LLM given tools and the ability to decide which to call. The loop: <strong>Reason</strong> (model decides what to do), <strong>Act</strong> (calls a tool), <strong>Observe</strong> (receives tool output), repeat until the task is complete. This is the ReAct pattern. The key risk is infinite loops — always add a max-step guard.
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Tech Stack -->
+  <div class="section-title">Tech Stack</div>
+  <div class="section-sub">Everything you'll install and use</div>
+
+  <div class="stack-grid">
+    <div class="stack-item">
+      <div class="name">Python 3.10+</div>
+      <div class="purpose">Main language</div>
+    </div>
+    <div class="stack-item">
+      <div class="name">anthropic</div>
+      <div class="purpose">Claude API SDK</div>
+    </div>
+    <div class="stack-item">
+      <div class="name">PyMuPDF</div>
+      <div class="purpose">Read PDF files</div>
+    </div>
+    <div class="stack-item">
+      <div class="name">python-dotenv</div>
+      <div class="purpose">Load .env API keys</div>
+    </div>
+    <div class="stack-item">
+      <div class="name">numpy</div>
+      <div class="purpose">Vector math</div>
+    </div>
+    <div class="stack-item">
+      <div class="name">ChromaDB</div>
+      <div class="purpose">Vector database</div>
+    </div>
+    <div class="stack-item">
+      <div class="name">Next.js</div>
+      <div class="purpose">Chat UI (Week 4)</div>
+    </div>
+    <div class="stack-item">
+      <div class="name">Vercel</div>
+      <div class="purpose">Deployment</div>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  AI Study Assistant — Built with Claude · Start with Day 1: <code>week1/day1_pdf_reader.py</code>
+</footer>
+
+</body>
+</html>
