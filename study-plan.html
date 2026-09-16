@@ -317,6 +317,74 @@
 
     /* Stack */
     .stack-grid {
+
+    /* Resource Deep Dive */
+    .resource-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 16px;
+      margin-bottom: 56px;
+    }
+
+    .resource-card {
+      background: #16161e;
+      border: 1px solid #2a2a3e;
+      border-radius: 10px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .resource-topic {
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: #f59e0b;
+      padding-bottom: 12px;
+      border-bottom: 1px solid #2a2a3e;
+    }
+
+    .resource-item {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+    }
+
+    .resource-star {
+      color: #f59e0b;
+      font-size: 0.85rem;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    .resource-spacer {
+      width: 14px;
+      flex-shrink: 0;
+    }
+
+    .resource-title {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: #fff;
+      margin-bottom: 3px;
+    }
+
+    .resource-source {
+      font-size: 0.78rem;
+      color: #8888aa;
+      margin-bottom: 5px;
+    }
+
+    .resource-note {
+      font-size: 0.8rem;
+      color: #9999bb;
+      line-height: 1.5;
+    }
+
+    /* Stack */
+    .stack-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
       gap: 12px;
@@ -738,6 +806,118 @@
       <h3>Build a Full RAG App</h3>
       <p class="channel">Traversy Media / FreeCodeCamp</p>
       <div class="search-term">build RAG app Python Next.js full tutorial 2024</div>
+    </div>
+
+  </div>
+
+  <!-- Deep Dive Resources -->
+  <div class="section-title">Deep Dive Resources — by Topic</div>
+  <div class="section-sub">Curated for where you are now (Week 3). Highest-value items marked ★</div>
+
+  <div class="resource-grid">
+
+    <div class="resource-card">
+      <div class="resource-topic">Cosine Similarity &amp; TF-IDF</div>
+      <div class="resource-item">
+        <span class="resource-star">★</span>
+        <div>
+          <div class="resource-title">The Illustrated Word2Vec</div>
+          <div class="resource-source">Jay Alammar · jalammar.github.io</div>
+          <div class="resource-note">Best visual explanation of word vectors and similarity. Read before Day 13.</div>
+        </div>
+      </div>
+      <div class="resource-item">
+        <div class="resource-spacer"></div>
+        <div>
+          <div class="resource-title">TF-IDF Explained</div>
+          <div class="resource-source">StatQuest with Josh Starmer · YouTube</div>
+          <div class="resource-note">12-minute video, no math background needed.</div>
+          <div class="search-term" style="margin-top:8px">TF-IDF StatQuest</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="resource-card">
+      <div class="resource-topic">Neural Embeddings</div>
+      <div class="resource-item">
+        <span class="resource-star">★</span>
+        <div>
+          <div class="resource-title">The Illustrated BERT</div>
+          <div class="resource-source">Jay Alammar · jalammar.github.io</div>
+          <div class="resource-note">Explains how transformer models learn embeddings. Visual-first, no equations.</div>
+        </div>
+      </div>
+      <div class="resource-item">
+        <div class="resource-spacer"></div>
+        <div>
+          <div class="resource-title">Voyage AI Embedding Guide</div>
+          <div class="resource-source">Voyage AI Docs · docs.voyageai.com</div>
+          <div class="resource-note">Why voyage-2 beats simpler models for retrieval tasks.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="resource-card">
+      <div class="resource-topic">Chunking Strategies (Day 17)</div>
+      <div class="resource-item">
+        <span class="resource-star">★</span>
+        <div>
+          <div class="resource-title">5 Levels of Text Splitting</div>
+          <div class="resource-source">Greg Kamradt · YouTube</div>
+          <div class="resource-note">Directly applicable to what you built in Day 12. Covers fixed-size, recursive, and semantic chunking.</div>
+          <div class="search-term" style="margin-top:8px">Greg Kamradt 5 levels text splitting</div>
+        </div>
+      </div>
+      <div class="resource-item">
+        <div class="resource-spacer"></div>
+        <div>
+          <div class="resource-title">Chunking Strategies for RAG</div>
+          <div class="resource-source">LlamaIndex Blog</div>
+          <div class="resource-note">Covers tradeoffs between chunk size, overlap, and retrieval precision.</div>
+          <div class="search-term" style="margin-top:8px">LlamaIndex chunking strategies RAG</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="resource-card">
+      <div class="resource-topic">Vector Databases (Day 13)</div>
+      <div class="resource-item">
+        <span class="resource-star">★</span>
+        <div>
+          <div class="resource-title">ChromaDB Getting Started</div>
+          <div class="resource-source">ChromaDB Docs · docs.trychroma.com</div>
+          <div class="resource-note">20-minute read. Complete before Day 13.</div>
+        </div>
+      </div>
+      <div class="resource-item">
+        <div class="resource-spacer"></div>
+        <div>
+          <div class="resource-title">Pinecone Learning Center</div>
+          <div class="resource-source">Pinecone · pinecone.io/learn</div>
+          <div class="resource-note">Best concept explainers on vector search — worth reading even if you're using ChromaDB.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="resource-card">
+      <div class="resource-topic">Foundations (go deeper)</div>
+      <div class="resource-item">
+        <span class="resource-star">★</span>
+        <div>
+          <div class="resource-title">Neural Networks series (eps 1–3)</div>
+          <div class="resource-source">3Blue1Brown · YouTube</div>
+          <div class="resource-note">Explains how neural nets learn representations — why neural embeddings beat TF-IDF.</div>
+          <div class="search-term" style="margin-top:8px">3Blue1Brown neural networks playlist</div>
+        </div>
+      </div>
+      <div class="resource-item">
+        <div class="resource-spacer"></div>
+        <div>
+          <div class="resource-title">Practical Deep Learning — Ch. 1–2</div>
+          <div class="resource-source">fast.ai · fast.ai</div>
+          <div class="resource-note">Code-first, no heavy math. Relevant to where you are now.</div>
+        </div>
+      </div>
     </div>
 
   </div>

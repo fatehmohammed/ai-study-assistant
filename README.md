@@ -1,4 +1,4 @@
-# AI Study Assistant
+# Jawar — AI Study Assistant
 
 A RAG-powered study assistant that reads lecture PDFs and helps you prepare for exams through summaries, Q&A, flashcards, and semantic search.
 
@@ -92,8 +92,30 @@ python3 week1/day2_qa_generator.py
 
 ## Progress
 
+### Week 1 — Prompting Fundamentals
 - [x] Day 1 — PDF Reader + Summary
 - [x] Day 2 — Q&A Generator
-- [ ] Day 3 — Flashcard Generator
-- [ ] Day 4 — Concept Extractor
-- [ ] Day 5 — Study Guide Builder
+- [x] Day 3 — Flashcard Generator
+- [x] Day 4 — Concept Extractor
+- [x] Day 5 — Study Guide Builder
+
+### Week 2 — Tool Use & Structured Outputs
+- [x] Day 6 — Structured Output (JSON)
+- [x] Day 7 — Tools Intro
+- [x] Day 8 — Multi-Tool Agent
+- [x] Day 9 — Streaming
+- [x] Day 10 — Autonomous Agent Loop
+
+### Week 3 — Embeddings & Semantic Search
+- [x] Day 11 — Your First Embedding (Voyage AI)
+- [x] Day 12 — Cosine Similarity Between Chunks
+- [ ] Day 13 — Store Embeddings in ChromaDB
+- [ ] Day 14 — Semantic Search
+- [ ] Day 15 — Search Across Multiple PDFs
+
+### Week 4 — RAG Pipeline + Chat UI
+- [ ] Day 16 — Full RAG Pipeline
+- [ ] Day 17 — Advanced RAG (chunking + re-ranking)
+- [ ] Day 18 — Next.js Backend Integration
+- [ ] Day 19 — Chat UI with PDF Upload
+- [ ] Day 20 — Final Polish + Deploy
