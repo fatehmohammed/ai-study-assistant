@@ -1,7 +1,8 @@
 .env
+.env.local
 __pycache__/
 *.pyc
 .DS_Store
-data/pdfs/
-*.txt
-data/chroma_db/
+data/
+week4/day19_nextjs_chat/.next/
+week4/day19_nextjs_chat/node_modules/
