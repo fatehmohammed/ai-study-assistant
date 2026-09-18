@@ -10,6 +10,9 @@ RUN apt-get update && apt-get install -y \
 WORKDIR /app
 
 COPY requirements.txt .
+# Install CPU-only torch before everything else so pip won't pull the GPU version
+RUN pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu
+# Install the rest — pip sees torch already installed (CPU) and won't replace it
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Bake the embedding model into the image so there's no download at runtime
