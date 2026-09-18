@@ -10,8 +10,6 @@ RUN apt-get update && apt-get install -y \
 WORKDIR /app
 
 COPY requirements.txt .
-# Install CPU-only PyTorch first to avoid pulling 1GB+ of CUDA/GPU packages
-RUN pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Bake the embedding model into the image so there's no download at runtime
