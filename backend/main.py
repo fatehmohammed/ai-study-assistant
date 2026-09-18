@@ -626,48 +626,60 @@ async def generate_questions_stream(request: SummarizeRequest):
             with open(chunk_assign_path) as f:
                 topic_chunks = json.load(f)
 
-            all_pairs: list[tuple[str, str]] = []
-            for topic, chunk_ids in topic_chunks.items():
-                for cid in chunk_ids:
-                    all_pairs.append((cid, topic))
-
-            total = len(all_pairs)
+            topics = list(topic_chunks.keys())
+            total_topics = len(topics)
             all_questions: list[dict] = []
-            topic_question_map: dict[str, list[int]] = {t: [] for t in topic_chunks.keys()}
+            topic_question_map: dict[str, list[int]] = {t: [] for t in topics}
 
-            for i, (chunk_id, topic) in enumerate(all_pairs):
-                yield f"data: {json.dumps({'type': 'progress', 'current': i + 1, 'total': total, 'message': f'Generating questions for chunk {i + 1} of {total}…'})}\n\n"
-                await asyncio.sleep(0)
-
-                chunk_result = pipeline._collection.get(ids=[chunk_id], include=["documents", "metadatas"])
-                if not chunk_result["documents"]:
+            for topic_idx, topic in enumerate(topics):
+                chunk_ids = topic_chunks.get(topic, [])
+                if not chunk_ids:
                     continue
 
-                chunk_text = chunk_result["documents"][0]
-                source = chunk_result["metadatas"][0].get("source", request.source_filter)
+                yield f"data: {json.dumps({'type': 'progress', 'current': topic_idx + 1, 'total': total_topics, 'message': f'Generating questions for topic {topic_idx + 1} of {total_topics}: {topic}…'})}\n\n"
+                await asyncio.sleep(0)
 
-                prompt = f"""You are a medical educator creating questions that build genuine understanding — not surface memorisation.
+                # Fetch all chunks for this topic and combine into one context
+                chunk_texts = []
+                source = request.source_filter
+                for chunk_id in chunk_ids:
+                    chunk_result = pipeline._collection.get(ids=[chunk_id], include=["documents", "metadatas"])
+                    if chunk_result["documents"]:
+                        chunk_texts.append(chunk_result["documents"][0])
+                        source = chunk_result["metadatas"][0].get("source", request.source_filter)
 
-Read this lecture content and generate a comprehensive set of multiple-choice questions. The goal: a student who answers all of these correctly should understand the material deeply enough to answer any exam question on this topic, even ones phrased differently.
+                if not chunk_texts:
+                    continue
 
-For each key concept, vary the question type:
-- **Recall** — "What is the definition / value / name of X?" (1 per concept, keep brief)
-- **Mechanism** — "Why does X happen?" / "What is the underlying process that causes Y?"
-- **Application** — "A patient presents with [signs from the notes]. What is the most likely explanation?"
-- **Comparison** — "What is the key difference between X and Y?" (when multiple similar concepts exist)
-- **Consequence** — "What happens if X is left untreated?" / "What is the result of Y?"
-- **Integration** — "How does concept X contribute to condition Y?"
+                topic_content = "\n\n---\n\n".join(chunk_texts)
+                target_questions = max(5, min(len(chunk_texts) * 3, 30))
+
+                prompt = f"""You are a medical educator building an exam question bank for the topic: **{topic}**
+
+Work in two steps:
+
+**Step 1 — Identify testable concepts**
+Read the lecture content and list every distinct concept worth testing on an exam. Skip trivial details. For each concept note its nature: fact, process, clinical scenario, comparison, outcome, or cross-cutting.
+
+**Step 2 — Generate questions**
+For the concepts you identified, generate multiple-choice questions using this distribution:
+- **Recall** (25%) — definitions, values, names, classifications
+- **Mechanism** (15%) — why/how a process works
+- **Application** (25%) — patient presents with X, what is most likely / what do you do
+- **Comparison** (10%) — key difference between X and Y (only when two similar concepts exist)
+- **Consequence** (10%) — what happens if untreated / result of Y
+- **Integration** (15%) — how concept X connects to or causes concept Y
 
 Rules:
-- Cover every distinct concept — do NOT skip any
-- Generate 1 question for minor points, 2–4 for rich or complex sections
+- Generate at most ONE question per distinct concept — do not test the same concept twice
+- Skip concepts too minor to appear on an exam
+- Target approximately {target_questions} questions total, scaled to content richness
 - Every question must be directly supported by the lecture text — no outside knowledge
-- No duplicate questions within this response
-- Distractors must be plausible but clearly wrong based on the notes
 - Each question must have exactly 4 options (A, B, C, D)
 - Do not use "All of the above" or "None of the above"
-- Explanation must state the underlying reason, not just repeat the answer
-- Return ONLY a JSON array — no markdown, no preamble
+- Distractors must be plausible but clearly wrong based on the notes
+- Explanation must state the underlying reason — not just repeat the answer
+- Return ONLY a JSON array — no markdown, no Step 1 output, no preamble
 
 Format:
 [
@@ -675,21 +687,19 @@ Format:
     "question": "...",
     "options": {{"A": "...", "B": "...", "C": "...", "D": "..."}},
     "correct": "A",
-    "explanation": "Explain WHY this is correct — the mechanism or reasoning, not just what the slide says.",
+    "explanation": "Explain WHY — the mechanism or reasoning.",
     "difficulty": "Easy|Medium|Hard",
     "question_type": "recall|mechanism|application|comparison|consequence|integration"
   }}
 ]
 
-Topic area: {topic}
-
-Lecture content:
-{chunk_text}"""
+Lecture content for topic "{topic}":
+{topic_content}"""
 
                 try:
                     response = pipeline._claude.messages.create(
                         model=pipeline.claude_model,
-                        max_tokens=2000,
+                        max_tokens=4000,
                         messages=[{"role": "user", "content": prompt}],
                     )
                     raw = response.content[0].text.strip()
@@ -716,7 +726,7 @@ Lecture content:
                         "question_type": q.get("question_type", "recall"),
                         "topic": topic,
                         "source": source,
-                        "evidence": [{"source": source, "score": 1.0, "text": chunk_text}],
+                        "evidence": [{"source": source, "score": 1.0, "text": topic_content[:500]}],
                     })
                     topic_question_map[topic].append(q_index)
 
