@@ -20,10 +20,9 @@ export default function ChatWindow({ messages, topicStats, onQuizScore, onQuizNe
 
   if (messages.length === 0) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center gap-2">
-        <p className="text-sm" style={{ color: "var(--secondary)" }}>
-          Upload a PDF or PPTX to get started
-        </p>
+      <div className="flex-1 flex flex-col items-center justify-center gap-4 px-4">
+        <img src="/jawar-logo.png" alt="Jawar" className="h-16 w-auto select-none" draggable={false} />
+        <p className="text-sm" style={{ color: "var(--secondary)" }}>Upload a PDF or PPTX to get started</p>
       </div>
     );
   }
@@ -31,19 +30,21 @@ export default function ChatWindow({ messages, topicStats, onQuizScore, onQuizNe
   const lastQuizId = [...messages].reverse().find((m) => m.quiz)?.id;
 
   return (
-    <div className="flex-1 overflow-y-auto px-4 py-6 flex flex-col gap-4">
-      {messages.map((msg) => (
-        <MessageBubble
-          key={msg.id}
-          message={msg}
-          topicStats={topicStats}
-          isLatestQuiz={msg.quiz ? msg.id === lastQuizId : undefined}
-          onQuizScore={onQuizScore}
-          onQuizNext={onQuizNext}
-          onViewSlide={onViewSlide}
-        />
-      ))}
-      <div ref={bottomRef} />
+    <div className="flex-1 overflow-y-auto py-8">
+      <div className="max-w-3xl mx-auto px-6 flex flex-col gap-6">
+        {messages.map((msg) => (
+          <MessageBubble
+            key={msg.id}
+            message={msg}
+            topicStats={topicStats}
+            isLatestQuiz={msg.quiz ? msg.id === lastQuizId : undefined}
+            onQuizScore={onQuizScore}
+            onQuizNext={onQuizNext}
+            onViewSlide={onViewSlide}
+          />
+        ))}
+        <div ref={bottomRef} />
+      </div>
     </div>
   );
 }

@@ -21,8 +21,14 @@ export default function Home() {
   const [indexedSources, setIndexedSources] = useState<string[]>([]);
   const [unreadablePagesBySource, setUnreadablePagesBySource] = useState<Record<string, number[]>>({});
   const [sourceTopics, setSourceTopics] = useState<Record<string, TopicPlan[]>>({});
-  const [chunkProgress, setChunkProgress] = useState<Record<string, Record<string, number>>>({});
-  const [questionProgress, setQuestionProgress] = useState<Record<string, Record<string, number>>>({});
+  const [chunkProgress, setChunkProgress] = useState<Record<string, Record<string, number>>>(() => {
+    if (typeof window === "undefined") return {};
+    try { return JSON.parse(localStorage.getItem("jawar_chunk_progress") ?? "{}"); } catch { return {}; }
+  });
+  const [questionProgress, setQuestionProgress] = useState<Record<string, Record<string, number>>>(() => {
+    if (typeof window === "undefined") return {};
+    try { return JSON.parse(localStorage.getItem("jawar_question_progress") ?? "{}"); } catch { return {}; }
+  });
   const [questionsReady, setQuestionsReady] = useState<Record<string, boolean>>({});
   const [questionGenProgress, setQuestionGenProgress] = useState<{ current: number; total: number } | null>(null);
   const [sourceFilter, setSourceFilter] = useState<string>("");
@@ -30,7 +36,17 @@ export default function Home() {
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [pdfName, setPdfName] = useState<string | null>(null);
   const [pdfIsImage, setPdfIsImage] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<{ page: number; total: number; pct: number } | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Persist quiz progress across page reloads so questions don't repeat
+  useEffect(() => {
+    localStorage.setItem("jawar_question_progress", JSON.stringify(questionProgress));
+  }, [questionProgress]);
+
+  useEffect(() => {
+    localStorage.setItem("jawar_chunk_progress", JSON.stringify(chunkProgress));
+  }, [chunkProgress]);
 
   useEffect(() => {
     checkHealth()
@@ -73,6 +89,36 @@ export default function Home() {
       .catch(() => {});
   }, [sourceFilter]);
 
+  const [topicsRefreshing, setTopicsRefreshing] = useState(false);
+
+  async function refreshTopics() {
+    if (!sourceFilter || topicsRefreshing) return;
+    setTopicsRefreshing(true);
+    try {
+      const topics = await getTopics(sourceFilter, true);
+      setSourceTopics((prev) => ({ ...prev, [sourceFilter]: topics }));
+      setQuestionsReady((prev) => ({ ...prev, [sourceFilter]: false }));
+      setQuestionProgress((prev) => ({ ...prev, [sourceFilter]: {} }));
+      // Regenerate questions with the updated topics
+      setQuestionGenProgress({ current: 0, total: 0 });
+      await streamGenerateQuestions(sourceFilter, (event) => {
+        if (event.type === "progress") {
+          setQuestionGenProgress({ current: event.current, total: event.total });
+        } else if (event.type === "done") {
+          setSourceTopics((prev) => ({ ...prev, [sourceFilter]: event.plans }));
+          setQuestionsReady((prev) => ({ ...prev, [sourceFilter]: true }));
+          setQuestionGenProgress(null);
+        } else if (event.type === "error") {
+          setQuestionGenProgress(null);
+        }
+      }, true);
+    } catch {
+      setQuestionGenProgress(null);
+    } finally {
+      setTopicsRefreshing(false);
+    }
+  }
+
   function getLeastCoveredTopic(plans: TopicPlan[]): string | undefined {
     if (plans.length === 0) return undefined;
     const progress = questionsReady[sourceFilter]
@@ -82,6 +128,36 @@ export default function Home() {
     if (untouched) return untouched.topic;
     const incomplete = plans.find((p) => (progress?.[p.topic] ?? 0) < p.count);
     return incomplete?.topic;
+  }
+
+  function detectQuizIntent(query: string): { isQuiz: boolean; rawTopic?: string } {
+    const q = query.toLowerCase().trim();
+    const patterns: [RegExp, number | null][] = [
+      [/^quiz\s+me\s+(?:on|about)\s+(.+)$/, 1],
+      [/^ask\s+me\s+(?:some\s+)?questions?\s+(?:on|about)\s+(.+)$/, 1],
+      [/^ask\s+me\s+(?:a\s+)?question\s+(?:on|about)\s+(.+)$/, 1],
+      [/^test\s+me\s+(?:on|about)\s+(.+)$/, 1],
+      [/^give\s+me\s+(?:a\s+)?(?:quiz|questions?)\s+(?:on|about)\s+(.+)$/, 1],
+      [/^(?:quiz|test)\s+me\s+on\s+(.+)$/, 1],
+      [/^(?:quiz|test)\s+me\s*$/, null],
+      [/^ask\s+me\s+(?:some\s+)?questions?\s*$/, null],
+    ];
+    for (const [pattern, group] of patterns) {
+      const match = q.match(pattern);
+      if (match) return { isQuiz: true, rawTopic: group !== null ? match[group]?.trim() : undefined };
+    }
+    return { isQuiz: false };
+  }
+
+  function matchTopic(rawTopic: string, topics: TopicPlan[]): string | undefined {
+    if (!rawTopic || !topics.length) return undefined;
+    const lower = rawTopic.toLowerCase();
+    const exact = topics.find((t) => t.topic.toLowerCase() === lower);
+    if (exact) return exact.topic;
+    const partial = topics.find(
+      (t) => t.topic.toLowerCase().includes(lower) || lower.includes(t.topic.toLowerCase())
+    );
+    return partial?.topic;
   }
 
   // When source filter changes, load that file's PDF preview from the server
@@ -108,6 +184,8 @@ export default function Home() {
       setIndexedSources((prev) => prev.filter((s) => s !== source));
       if (sourceFilter === source) setSourceFilter("");
       if (pdfName === source) { setPdfUrl(null); setPdfName(null); setPdfIsImage(false); }
+      setQuestionProgress((prev) => { const next = { ...prev }; delete next[source]; return next; });
+      setChunkProgress((prev) => { const next = { ...prev }; delete next[source]; return next; });
       setMessages((prev) => [
         ...prev,
         { id: crypto.randomUUID(), role: "assistant", text: `"${source}" removed from index.` },
@@ -213,21 +291,27 @@ export default function Home() {
     setPdfIsImage(true);
   }
 
-  function handleUploaded(source: string, chunks: number, unreadablePages: number[]) {
+  function handleUploaded(source: string, chunks: number, totalPages: number, unreadablePages: number[]) {
     setIndexedSources((prev) => prev.includes(source) ? prev : [...prev, source]);
     setSourceFilter(source);
     if (unreadablePages.length > 0) {
       setUnreadablePagesBySource((prev) => ({ ...prev, [source]: unreadablePages }));
     }
-    const unreadableNote = unreadablePages.length > 0
-      ? `\n\n⚠️ ${unreadablePages.length} slide${unreadablePages.length > 1 ? "s" : ""} had no readable text (image-only). You can view them below.`
+
+    const readablePages = totalPages - unreadablePages.length;
+    const coverageLine = totalPages > 0
+      ? `Scanned **${totalPages} pages** — **${readablePages} readable**, ${unreadablePages.length} skipped.`
+      : `Indexed ${chunks} chunks.`;
+    const skippedLine = unreadablePages.length > 0
+      ? `\n\nSkipped pages (image-only or no text): **${unreadablePages.join(", ")}**`
       : "";
+
     setMessages((prev) => [
       ...prev,
       {
         id: crypto.randomUUID(),
         role: "assistant",
-        text: `"${source}" indexed — ${chunks} chunks ready.${unreadableNote}`,
+        text: `"${source}" indexed. ${coverageLine}${skippedLine}`,
         unreadableSlides: unreadablePages.map((page) => ({ page, source })),
       },
     ]);
@@ -284,6 +368,17 @@ export default function Home() {
   async function handleSend() {
     const query = input.trim();
     if (!query || loading) return;
+
+    // Intercept quiz-intent phrases and route to quiz mode
+    const { isQuiz, rawTopic } = detectQuizIntent(query);
+    if (isQuiz) {
+      setInput("");
+      const topics = sourceTopics[sourceFilter] ?? [];
+      const topic = rawTopic ? matchTopic(rawTopic, topics) : undefined;
+      setMessages((prev) => [...prev, { id: crypto.randomUUID(), role: "user", text: query }]);
+      handleQuiz(topic);
+      return;
+    }
 
     // Build history — include quiz cards as text so Claude has context for follow-up questions
     const history = messages
@@ -349,23 +444,37 @@ export default function Home() {
 
   return (
     <div className="h-screen flex flex-col" style={{ background: "var(--background)" }}>
+
       {/* Header */}
       <header
-        className="flex items-center justify-between px-6 py-4 shrink-0"
-        style={{
-          background: "rgba(245,245,247,0.85)",
-          backdropFilter: "blur(20px)",
-          WebkitBackdropFilter: "blur(20px)",
-          borderBottom: "1px solid var(--border)",
-        }}
+        className="relative shrink-0 flex items-center justify-between px-6 py-3.5"
+        style={{ background: "#fff", borderBottom: "1px solid var(--border)" }}
       >
-        <div className="flex items-center gap-2">
-          <span className="text-lg font-semibold" style={{ color: "var(--foreground)", letterSpacing: "-0.02em" }}>
-            Jawar
-          </span>
-          <span className="text-sm" style={{ color: "var(--secondary)" }}>Study Assistant</span>
+        <div className="flex items-center">
+          <svg width="210" height="64" viewBox="0 0 460 140" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Jawar Study Assistant">
+            <g transform="translate(16, 14)">
+              <path d="M4 84C18 98 40 102 72 102C98 102 114 94 120 84H4Z" fill="#0D9488"/>
+              <path d="M2 84H122" stroke="#0F172A" strokeWidth="3" strokeLinecap="round"/>
+              <path d="M-2 100C12 107 30 109 52 106C74 103 96 109 114 104" stroke="#38BDF8" strokeWidth="3" strokeLinecap="round"/>
+              <path d="M68 20L98 74H68V20Z" fill="#0284C7" fillOpacity="0.9"/>
+              <path d="M64 32L44 74H64V32Z" fill="#14B8A6" fillOpacity="0.65"/>
+              <path d="M40 26H70V38H56V66C56 73.732 49.732 80 42 80C34.268 80 28 73.732 28 66H40C40 67.1 40.9 68 42 68C43.1 68 44 67.1 44 66V38H40V26Z" fill="#0F172A"/>
+            </g>
+            <g transform="translate(126, 28)">
+              <text x="0" y="66" fontFamily="var(--font-plus-jakarta), 'Plus Jakarta Sans', system-ui, sans-serif" fontWeight="800" fontSize="68" fill="#0F172A" letterSpacing="-0.035em">awar</text>
+              <text x="2" y="96" fontFamily="var(--font-plus-jakarta), 'Plus Jakarta Sans', system-ui, sans-serif" fontWeight="600" fontSize="22" fill="#64748B" letterSpacing="0.22em">STUDY ASSISTANT</text>
+            </g>
+          </svg>
         </div>
+
         <div className="flex items-center gap-3 text-xs" style={{ color: "var(--secondary)" }}>
+          {uploadProgress && (
+            <span style={{ color: "var(--secondary)" }}>
+              {uploadProgress.total > 0
+                ? `Indexing… ${uploadProgress.page}/${uploadProgress.total} pages`
+                : "Indexing…"}
+            </span>
+          )}
           {score.total > 0 && (
             <span className="px-2 py-0.5 rounded-full font-medium" style={{ background: "#e8f0fe", color: "var(--accent)" }}>
               {score.correct}/{score.total} correct
@@ -376,13 +485,25 @@ export default function Home() {
             const totalQ = plans.reduce((s, p) => s + p.count, 0);
             const answeredQ = Object.values(topicStats).reduce((s, t) => s + t.total, 0);
             return (
-              <span className="px-2 py-0.5 rounded-full font-medium" style={{ background: answeredQ >= totalQ ? "#f0fdf4" : "#f5f5f7", color: answeredQ >= totalQ ? "#16a34a" : "var(--secondary)" }}>
+              <span className="px-2 py-0.5 rounded-full font-medium" style={{ background: answeredQ >= totalQ ? "#f0fdf4" : "var(--surface)", color: answeredQ >= totalQ ? "#16a34a" : "var(--secondary)" }}>
                 Q {answeredQ}/{totalQ}
               </span>
             );
           })()}
-          <span className="w-2 h-2 rounded-full" style={{ background: serverOnline === null ? "#f5a623" : serverOnline ? "#34c759" : "#ff3b30" }} />
-          {serverOnline === null ? "Connecting…" : serverOnline ? "Connected" : "API offline"}
+          <span className="flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full" style={{ background: serverOnline === null ? "#f59e0b" : serverOnline ? "#22c55e" : "#ef4444" }} />
+            {serverOnline === null ? "Connecting…" : serverOnline ? "Connected" : "Offline"}
+          </span>
+        </div>
+
+        {/* Upload progress bar — replaces the bottom border while indexing */}
+        <div className="absolute bottom-0 left-0 right-0 overflow-hidden" style={{ height: "2px", background: "var(--border)" }}>
+          {uploadProgress && (
+            <div
+              className="h-full transition-all duration-200"
+              style={{ width: `${uploadProgress.pct}%`, background: "var(--accent)" }}
+            />
+          )}
         </div>
       </header>
 
@@ -415,8 +536,8 @@ export default function Home() {
               ) : pdfName?.toLowerCase().endsWith(".pdf") || pdfName?.toLowerCase().endsWith(".pptx") ? (
                 <iframe src={pdfUrl} className="flex-1 w-full" style={{ border: "none" }} />
               ) : (
-                <div className="flex-1 flex flex-col items-center justify-center gap-2 px-6 text-center">
-                  <p className="text-xs" style={{ color: "var(--secondary)" }}>Preview not available for this file type.</p>
+                <div className="flex-1 flex flex-col items-center justify-center px-6 text-center">
+                  <p className="text-xs" style={{ color: "var(--secondary)" }}>Preview not available.</p>
                 </div>
               )}
             </>
@@ -424,42 +545,53 @@ export default function Home() {
         </div>
 
         {/* Right: Chat */}
-        <div className="flex flex-col flex-1 overflow-hidden">
+        <div className="flex-1 flex flex-col overflow-hidden">
           <ChatWindow messages={messages} topicStats={topicStats} onQuizScore={handleQuizScore} onQuizNext={handleQuiz} onViewSlide={handleViewSlide} />
 
-          {/* Input bar */}
-          <div
-            className="px-4 pb-4 pt-3 flex flex-col items-center gap-2 shrink-0"
-            style={{
-              background: "rgba(245,245,247,0.9)",
-              backdropFilter: "blur(20px)",
-              WebkitBackdropFilter: "blur(20px)",
-              borderTop: "1px solid var(--border)",
-            }}
-          >
-            <div className="w-full max-w-2xl flex flex-col gap-2">
+          {/* Bottom panel: topics + input */}
+          <div className="shrink-0" style={{ borderTop: "1px solid var(--border)", background: "#fff" }}>
+
+            {/* Topic chips — full width */}
+            {sourceFilter && sourceTopics[sourceFilter]?.length > 0 && (
+              <div className="flex items-center gap-2">
+                <div className="flex-1 min-w-0">
+                  <TopicChips
+                    topics={sourceTopics[sourceFilter]}
+                    topicStats={topicStats}
+                    onQuizTopic={(topic) => handleQuiz(topic)}
+                    disabled={quizLoading || loading}
+                  />
+                </div>
+                <button
+                  onClick={refreshTopics}
+                  disabled={topicsRefreshing || quizLoading || loading}
+                  title="Refresh topics"
+                  className="shrink-0 mr-2 text-xs px-2 py-1 rounded"
+                  style={{ color: "var(--secondary)", opacity: topicsRefreshing ? 0.5 : 1 }}
+                >
+                  {topicsRefreshing ? "…" : "↺"}
+                </button>
+              </div>
+            )}
+
+            {/* Input area */}
+            <div className="max-w-3xl mx-auto px-4 pb-4 pt-2">
+
               {/* Question generation progress */}
               {questionGenProgress && (
-                <div className="flex items-center gap-2 text-xs" style={{ color: "var(--secondary)" }}>
-                  <div className="w-3 h-3 rounded-full border-2 border-current border-t-transparent animate-spin" />
+                <div className="flex items-center gap-2 text-xs mb-2" style={{ color: "var(--secondary)" }}>
+                  <div className="w-3 h-3 rounded-full border-2 border-current border-t-transparent animate-spin shrink-0" />
                   {questionGenProgress.total > 0
-                    ? `Preparing questions… ${questionGenProgress.current}/${questionGenProgress.total} chunks`
+                    ? `Preparing questions… ${questionGenProgress.current}/${questionGenProgress.total} topics`
                     : "Preparing questions…"}
                 </div>
               )}
 
-              {/* Topic chips — shown when topics are loaded for the selected source */}
-              {sourceFilter && sourceTopics[sourceFilter]?.length > 0 && (
-                <TopicChips
-                  topics={sourceTopics[sourceFilter]}
-                  topicStats={topicStats}
-                  onQuizTopic={(topic) => handleQuiz(topic)}
-                  disabled={quizLoading || loading}
-                />
-              )}
-
-              {/* Main input row */}
-              <div className="flex gap-2">
+              {/* Input card */}
+              <div
+                className="rounded-2xl flex flex-col"
+                style={{ background: "var(--surface)", border: "1px solid var(--border)", boxShadow: "0 2px 12px rgba(0,0,0,0.06)" }}
+              >
                 <input
                   ref={inputRef}
                   value={input}
@@ -467,97 +599,102 @@ export default function Home() {
                   onKeyDown={handleKeyDown}
                   placeholder={indexedSources.length === 0 ? "Upload a PDF first…" : "Ask a question about your notes…"}
                   disabled={loading || !serverOnline}
-                  className="flex-1 px-4 py-3 rounded-xl text-sm outline-none disabled:opacity-50"
-                  style={{ background: "var(--surface)", border: "1px solid var(--border)", color: "var(--foreground)" }}
+                  className="px-4 py-3.5 text-sm bg-transparent outline-none disabled:opacity-50 rounded-t-2xl"
+                  style={{ color: "var(--foreground)" }}
                 />
-                <button
-                  onClick={handleSend}
-                  disabled={loading || !input.trim() || !serverOnline}
-                  className="px-5 py-3 rounded-xl text-sm font-medium transition-opacity disabled:opacity-40"
-                  style={{ background: "var(--accent)", color: "#fff" }}
-                >
-                  {loading ? "…" : "Send"}
-                </button>
-              </div>
 
-              {/* Secondary toolbar */}
-              <div className="flex items-center gap-2 flex-wrap">
-                <UploadButton onUploaded={handleUploaded} onFileSelected={handleFileSelected} />
-                {indexedSources.length > 0 && (
-                  sourceFilter ? (
-                    <div
-                      className="flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium"
-                      style={{ background: "#e8f0fe", border: "1px solid #c7d8fc", color: "var(--accent)" }}
+                {/* Card toolbar */}
+                <div className="flex items-center justify-between px-3 pb-3 pt-0.5 gap-2 flex-wrap">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <UploadButton onUploaded={handleUploaded} onFileSelected={handleFileSelected} onProgress={setUploadProgress} />
+
+                    {indexedSources.length > 0 && (
+                      sourceFilter ? (
+                        <div
+                          className="flex items-center gap-1 px-2.5 py-1.5 rounded-full text-xs font-medium"
+                          style={{ background: "#e8f0fe", border: "1px solid #c7d8fc", color: "var(--accent)" }}
+                        >
+                          <span className="truncate max-w-[120px]">{sourceFilter}</span>
+                          <button
+                            onClick={handlePreview}
+                            title={pdfUrl && pdfName === sourceFilter ? "Hide preview" : "Preview"}
+                            className="ml-1 flex items-center opacity-70 hover:opacity-100"
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" />
+                            </svg>
+                          </button>
+                          <button onClick={() => setSourceFilter("")} className="ml-0.5 opacity-50 hover:opacity-100">×</button>
+                        </div>
+                      ) : (
+                        <select
+                          value={sourceFilter}
+                          onChange={(e) => setSourceFilter(e.target.value)}
+                          className="px-2.5 py-1.5 rounded-full text-xs outline-none"
+                          style={{ background: "var(--background)", border: "1px solid var(--border)", color: "var(--secondary)" }}
+                        >
+                          <option value="">All sources</option>
+                          {indexedSources.map((s) => (
+                            <option key={s} value={s}>{s}</option>
+                          ))}
+                        </select>
+                      )
+                    )}
+
+                    <button
+                      onClick={handleSummarize}
+                      disabled={summarizeLoading || loading || indexedSources.length === 0}
+                      className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-xs font-medium transition-opacity disabled:opacity-40"
+                      style={{ background: "var(--background)", border: "1px solid var(--border)", color: "var(--foreground)" }}
                     >
-                      <span className="truncate max-w-[140px]">{sourceFilter}</span>
-                      <button
-                        onClick={handlePreview}
-                        title={pdfUrl && pdfName === sourceFilter ? "Hide preview" : "Preview"}
-                        className="ml-1 flex items-center"
-                        style={{ opacity: 0.7 }}
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                          <circle cx="12" cy="12" r="3"/>
-                        </svg>
-                      </button>
-                      <button
-                        onClick={() => setSourceFilter("")}
-                        title="Clear filter"
-                        className="ml-0.5 flex items-center"
-                        style={{ opacity: 0.5 }}
-                      >
-                        ×
-                      </button>
-                    </div>
-                  ) : (
+                      <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <line x1="21" y1="10" x2="3" y2="10" /><line x1="21" y1="6" x2="3" y2="6" /><line x1="21" y1="14" x2="3" y2="14" /><line x1="21" y1="18" x2="10" y2="18" />
+                      </svg>
+                      {summarizeLoading ? "Summarizing…" : "Summarize"}
+                    </button>
+                  </div>
+
+                  <div className="flex items-center gap-1.5">
                     <select
-                      value={sourceFilter}
-                      onChange={(e) => setSourceFilter(e.target.value)}
-                      className="px-3 py-1.5 rounded-full text-xs outline-none"
-                      style={{ background: "var(--surface)", border: "1px solid var(--border)", color: "var(--secondary)" }}
+                      value={difficulty}
+                      onChange={(e) => setDifficulty(e.target.value)}
+                      className="px-2.5 py-1.5 rounded-full text-xs outline-none"
+                      style={{ background: "var(--background)", border: "1px solid var(--border)", color: "var(--secondary)" }}
                     >
-                      <option value="">All sources</option>
-                      {indexedSources.map((s) => (
-                        <option key={s} value={s}>{s}</option>
-                      ))}
+                      <option>Easy</option>
+                      <option>Medium</option>
+                      <option>Hard</option>
                     </select>
-                  )
-                )}
-                <button
-                  onClick={handleSummarize}
-                  disabled={summarizeLoading || loading || indexedSources.length === 0}
-                  title={indexedSources.length === 0 ? "Upload a document first" : "Summarize"}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-opacity disabled:opacity-40"
-                  style={{ background: "var(--surface)", border: "1px solid var(--border)", color: "var(--foreground)" }}
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <line x1="21" y1="10" x2="3" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="21" y1="18" x2="10" y2="18"/>
-                  </svg>
-                  {summarizeLoading ? "Summarizing…" : "Summarize"}
-                </button>
-                <button
-                  onClick={() => handleQuiz()}
-                  disabled={quizLoading || loading || indexedSources.length === 0}
-                  title={indexedSources.length === 0 ? "Upload a document first" : "Quiz me"}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-opacity disabled:opacity-40"
-                  style={{ background: "var(--surface)", border: "1px solid var(--border)", color: "var(--foreground)" }}
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
-                  </svg>
-                  {quizLoading ? "Generating…" : "Quiz me"}
-                </button>
-                <select
-                  value={difficulty}
-                  onChange={(e) => setDifficulty(e.target.value)}
-                  className="px-3 py-1.5 rounded-full text-xs outline-none"
-                  style={{ background: "var(--surface)", border: "1px solid var(--border)", color: "var(--secondary)" }}
-                >
-                  <option>Easy</option>
-                  <option>Medium</option>
-                  <option>Hard</option>
-                </select>
+
+                    <button
+                      onClick={() => handleQuiz()}
+                      disabled={quizLoading || loading || indexedSources.length === 0}
+                      className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-xs font-medium transition-opacity disabled:opacity-40"
+                      style={{ background: "var(--background)", border: "1px solid var(--border)", color: "var(--foreground)" }}
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+                      </svg>
+                      {quizLoading ? "…" : "Quiz"}
+                    </button>
+
+                    <button
+                      onClick={handleSend}
+                      disabled={loading || !input.trim() || !serverOnline}
+                      className="flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-semibold transition-opacity disabled:opacity-40"
+                      style={{ background: "var(--accent)", color: "#fff" }}
+                    >
+                      {loading ? (
+                        <div className="w-3 h-3 rounded-full border-2 border-white border-t-transparent animate-spin" />
+                      ) : (
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" />
+                        </svg>
+                      )}
+                      {loading ? "…" : "Send"}
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           </div>

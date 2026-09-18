@@ -26,7 +26,7 @@ class RAGPipeline:
         db_path: str = "./data/chroma_db",
         collection_name: str = "jawar",
         embed_model: str = "all-MiniLM-L6-v2",
-        claude_model: str = "claude-opus-4-7",
+        claude_model: str = "claude-haiku-4-5-20251001",
         chunk_size: int = 200,
         chunk_overlap: int = 30,
         n_results: int = 3,

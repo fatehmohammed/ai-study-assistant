@@ -38,7 +38,7 @@ export async function checkHealth(): Promise<HealthResponse> {
 
 export type IndexEvent =
   | { type: "progress"; page: number; total: number; pct: number }
-  | { type: "done"; source: string; chunks: number; message: string; unreadable_pages?: number[] }
+  | { type: "done"; source: string; chunks: number; message: string; total_pages?: number; unreadable_pages?: number[] }
   | { type: "error"; message: string };
 
 export function slideImageUrl(source: string, page: number): string {
@@ -106,11 +106,11 @@ export interface TopicPlan {
   count: number;
 }
 
-export async function getTopics(sourceFilter: string): Promise<TopicPlan[]> {
+export async function getTopics(sourceFilter: string, force = false): Promise<TopicPlan[]> {
   const res = await fetch(`${API_BASE}/topics`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ source_filter: sourceFilter }),
+    body: JSON.stringify({ source_filter: sourceFilter, force }),
   });
   if (!res.ok) throw new Error("Could not load topics");
   return res.json();
@@ -136,12 +136,13 @@ export type QuestionGenEvent =
 
 export async function streamGenerateQuestions(
   sourceFilter: string,
-  onEvent: (event: QuestionGenEvent) => void
+  onEvent: (event: QuestionGenEvent) => void,
+  force = false
 ): Promise<void> {
   const res = await fetch(`${API_BASE}/questions/stream`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ source_filter: sourceFilter }),
+    body: JSON.stringify({ source_filter: sourceFilter, force }),
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({ detail: "Question generation failed" }));
